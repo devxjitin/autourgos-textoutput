@@ -1,0 +1,7 @@
+# Changelog
+
+## 0.1.0
+
+- Initial release: `OutputBox` / `show_output()` -- a thread-safe Tkinter popup for displaying agent/LLM output, with optional Markdown rendering (`markdown` + `tkhtmlview`, gated behind the `markdown` extra; falls back to plain scrollable text without it). Deliberately a separate package from `autourgos-textinput` (capture vs. display are different concerns) and deliberately manages its own internal Tk root on its own background thread (unlike `TextInputBox`, which requires the caller's real main thread) -- since output is naturally triggered from wherever a response becomes available, often a worker thread.
+- Live-verified: Markdown rendering confirmed end-to-end (`# Hello\n\nBold **text**` renders with real bold styling, not literal `**` markers -- had to dig one level past `HTMLScrolledText`'s `.pack()`-rebinding-to-an-internal-Frame implementation detail, the classic `tkinter.scrolledtext.ScrolledText` trick, to actually find and inspect the rendered widget). Also live-verified the real intended pairing: a `TextInputBox` (owning the real main thread's Tk root) and an `OutputBox` (owning its own separate background-thread Tk root) coexisting in the same process at the same time, `on_submit` calling `show_output()` -- no conflict.
+- 9 tests (real Tkinter widgets; the plain-text fallback path tested both via `markdown=False` and by simulating the `markdown` extra being absent).

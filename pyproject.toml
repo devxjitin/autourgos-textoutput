@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autourgos-textoutput"
+version = "0.1.0"
+description = "Thread-safe Tkinter popup for displaying agent/LLM output for the Autourgos framework, with optional Markdown rendering."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Jitin Kumar Sengar", email = "devxjitin@gmail.com" },
+]
+maintainers = [
+    {name = "Sonia"},
+    {name = "Vishwanil Suman"},
+]
+keywords = [
+    "autourgos", "gui", "tkinter", "markdown", "output",
+    "agent", "llm", "ai",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: User Interfaces",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+markdown = [
+    "markdown>=3.4",
+    "tkhtmlview>=0.2",
+]
+dev = [
+    "pytest>=7.0",
+    "markdown>=3.4",
+    "tkhtmlview>=0.2",
+    "build",
+    "twine",
+]
+
+[project.urls]
+Homepage = "https://github.com/devxjitin/autourgos-textoutput"
+Repository = "https://github.com/devxjitin/autourgos-textoutput"
+Issues = "https://github.com/devxjitin/autourgos-textoutput/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["autourgos_textoutput*"]
+
+[tool.setuptools.package-data]
+autourgos_textoutput = ["py.typed"]
