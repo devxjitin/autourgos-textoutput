@@ -28,6 +28,8 @@ import queue
 import threading
 from typing import Any, Callable, Optional, Tuple
 
+from autourgos_core import require_available, try_import
+
 logger = logging.getLogger(__name__)
 
 _DEFAULT_TITLE = "Autourgos Output"
@@ -42,30 +44,27 @@ class TextOutputUnavailableError(TextOutputError):
 
 
 def _load_tkinter() -> Tuple[bool, Any, Optional[str]]:
-    try:
-        import tkinter as _tkinter
-        return True, _tkinter, None
-    except ImportError as exc:
-        return False, None, f"tkinter is not available: {exc}"
+    available, modules, error = try_import("tkinter")
+    if not available:
+        return False, None, f"tkinter is not available: {error}"
+    return True, modules["tkinter"], None
 
 
 def _load_markdown_renderer() -> Tuple[bool, Any, Any, Optional[str]]:
     """Try to import `markdown` and `tkhtmlview`. Returns (available, markdown module, HTMLScrolledText class, error)."""
-    try:
-        import markdown as _markdown
-    except ImportError as exc:
+    md_available, md_modules, md_error = try_import("markdown")
+    if not md_available:
         return False, None, None, (
             "The 'markdown' package is required for Markdown rendering "
-            f"(pip install autourgos-textoutput[markdown]). Import error: {exc}"
+            f"(pip install autourgos-textoutput[markdown]). Import error: {md_error}"
         )
-    try:
-        from tkhtmlview import HTMLScrolledText as _HTMLScrolledText
-    except ImportError as exc:
+    tk_available, tk_modules, tk_error = try_import("tkhtmlview")
+    if not tk_available:
         return False, None, None, (
             "The 'tkhtmlview' package is required for Markdown rendering "
-            f"(pip install autourgos-textoutput[markdown]). Import error: {exc}"
+            f"(pip install autourgos-textoutput[markdown]). Import error: {tk_error}"
         )
-    return True, _markdown, _HTMLScrolledText, None
+    return True, md_modules["markdown"], tk_modules["tkhtmlview"].HTMLScrolledText, None
 
 
 class OutputBox:
@@ -97,10 +96,11 @@ class OutputBox:
         self._start_error: Optional[Exception] = None
 
     def _require_available(self) -> None:
-        if not self._tk_available:
-            raise TextOutputUnavailableError(
-                f"autourgos-textoutput is unavailable. Detail: {self._tk_import_error}"
-            )
+        require_available(
+            self._tk_available,
+            f"autourgos-textoutput is unavailable. Detail: {self._tk_import_error}",
+            TextOutputUnavailableError,
+        )
 
     def _ensure_started(self) -> None:
         self._require_available()

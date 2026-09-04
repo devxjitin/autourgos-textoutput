@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Internal: `_load_tkinter()`/`_load_markdown_renderer()`'s import-probing logic moved to `autourgos_core.try_import()` (new `autourgos-core>=0.1.0` dependency), and `_require_available()`'s conditional-raise moved to `autourgos_core.require_available()`. No behavior change -- error messages stay identical.
+
 ## 0.1.0
 
 - Initial release: `OutputBox` / `show_output()` -- a thread-safe Tkinter popup for displaying agent/LLM output, with optional Markdown rendering (`markdown` + `tkhtmlview`, gated behind the `markdown` extra; falls back to plain scrollable text without it). Deliberately a separate package from `autourgos-textinput` (capture vs. display are different concerns) and deliberately manages its own internal Tk root on its own background thread (unlike `TextInputBox`, which requires the caller's real main thread) -- since output is naturally triggered from wherever a response becomes available, often a worker thread.

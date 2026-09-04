@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autourgos-textoutput"
-version = "0.1.0"
+version = "0.1.1"
 description = "Thread-safe Tkinter popup for displaying agent/LLM output for the Autourgos framework, with optional Markdown rendering."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -34,7 +34,9 @@ classifiers = [
     "Topic :: Software Development :: User Interfaces",
     "Typing :: Typed",
 ]
-dependencies = []
+dependencies = [
+    "autourgos-core>=0.1.0",
+]
 
 [project.optional-dependencies]
 markdown = [
