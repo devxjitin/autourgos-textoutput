@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- **Fixed:** `show()`/`show_output()` blindly trusted the `text: str` type hint -- passing the metadata dict an LLM wrapper returns with `structured_output=True` rendered its Python repr instead of the actual response text. Now runs `text` through `autourgos_core.extract_text()` first (bumped `autourgos-core>=0.4.0`); a plain string still passes through unchanged.
+
 ## 0.1.2
 
 - Internal: `__version__` resolution moved to `autourgos_core.package_version()` (bumped `autourgos-core>=0.3.0`). No functional change.

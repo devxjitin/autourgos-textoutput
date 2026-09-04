@@ -28,7 +28,7 @@ import queue
 import threading
 from typing import Any, Callable, Optional, Tuple
 
-from autourgos_core import require_available, try_import
+from autourgos_core import extract_text, require_available, try_import
 
 logger = logging.getLogger(__name__)
 
@@ -140,19 +140,23 @@ class OutputBox:
         if self._root is not None:
             self._root.after(50, self._poll_queue)
 
-    def show(self, text: str, *, title: Optional[str] = None, markdown: bool = True) -> None:
+    def show(self, text: Any, *, title: Optional[str] = None, markdown: bool = True) -> None:
         """
         Show `text` in a popup window. Safe to call from any thread --
         starts this box's internal Tk root/thread on first use if not
         already running.
 
+        text: a plain string, or the metadata dict an LLM wrapper returns
+            when constructed with structured_output=True (its "response"
+            key is extracted automatically).
         markdown: if True (default) and the `markdown` extra is installed,
             renders `text` as Markdown (headings, bold/italic, code blocks,
             lists, links). Falls back to plain scrollable text if the extra
             isn't installed, or if `markdown=False`.
         """
         self._ensure_started()
-        self._queue.put(lambda: self._show_window(text, title or self.title, markdown))
+        resolved_text = extract_text(text)
+        self._queue.put(lambda: self._show_window(resolved_text, title or self.title, markdown))
 
     def close_all(self) -> None:
         """Close every currently-open output window belonging to this box. Safe to call from any thread."""
@@ -220,7 +224,7 @@ def _get_default_box() -> OutputBox:
     return _default_box
 
 
-def show_output(text: str, *, title: str = _DEFAULT_TITLE, markdown: bool = True) -> None:
+def show_output(text: Any, *, title: str = _DEFAULT_TITLE, markdown: bool = True) -> None:
     """
     Convenience function: show `text` (typically an agent/LLM response) in
     a popup, rendered as Markdown by default. Uses one shared, lazily

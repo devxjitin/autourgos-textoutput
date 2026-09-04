@@ -95,6 +95,28 @@ def test_plain_text_fallback_when_markdown_false():
     box.close_all()
 
 
+def test_structured_output_dict_response_is_extracted():
+    """
+    Regression: show()/show_output() used to trust the `text: str` type
+    hint blindly -- an LLM wrapper constructed with structured_output=True
+    (autourgos-openaichat/autourgos-responses) returns a metadata dict, not
+    a plain string, and passing one straight to show() rendered the dict's
+    repr instead of the actual response text (or worse, depending on the
+    Markdown renderer's handling of a non-str input).
+    """
+    box = OutputBox()
+    box.show({"model": "gpt-4o", "response": "the actual answer", "input_tokens": 9}, markdown=False)
+    tops = _wait_for_toplevel(box)
+    win = tops[0]
+    text_widgets = [w for f in win.winfo_children() for w in getattr(f, "winfo_children", lambda: [])()
+                    if isinstance(w, tkinter.Text)]
+    assert len(text_widgets) == 1
+    rendered = text_widgets[0].get("1.0", "end")
+    assert "the actual answer" in rendered
+    assert "'model'" not in rendered  # not the raw dict repr
+    box.close_all()
+
+
 def test_markdown_rendering_when_extra_installed():
     from tkhtmlview import HTMLScrolledText
 
