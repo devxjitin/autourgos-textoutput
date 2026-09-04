@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Internal: `OutputBox`'s queue-post/drain and lazy-start-worker-thread internals migrated to `autourgos_core.PendingCallableQueue`/`LazyBackgroundThread`. No functional change (per-callback exception logging on drain preserved). Bumped `autourgos-core>=0.10.0`. Live-verified real Tk popup show/close round trip.
+
 ## 0.1.3
 
 - **Fixed:** `show()`/`show_output()` blindly trusted the `text: str` type hint -- passing the metadata dict an LLM wrapper returns with `structured_output=True` rendered its Python repr instead of the actual response text. Now runs `text` through `autourgos_core.extract_text()` first (bumped `autourgos-core>=0.4.0`); a plain string still passes through unchanged.

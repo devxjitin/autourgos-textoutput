@@ -24,11 +24,16 @@ Markdown rendering is gated behind the `markdown` extra (`markdown` +
 from __future__ import annotations
 
 import logging
-import queue
 import threading
 from typing import Any, Callable, Optional, Tuple
 
-from autourgos_core import extract_text, require_available, try_import
+from autourgos_core import (
+    LazyBackgroundThread,
+    PendingCallableQueue,
+    extract_text,
+    require_available,
+    try_import,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,11 +94,8 @@ class OutputBox:
         self.height = height
 
         self._root: Any = None
-        self._queue: "queue.Queue[Callable[[], None]]" = queue.Queue()
-        self._thread: Optional[threading.Thread] = None
-        self._started = threading.Event()
-        self._start_lock = threading.Lock()
-        self._start_error: Optional[Exception] = None
+        self._queue = PendingCallableQueue()
+        self._bg = LazyBackgroundThread(self._run, timeout=5.0)
 
     def _require_available(self) -> None:
         require_available(
@@ -104,39 +106,31 @@ class OutputBox:
 
     def _ensure_started(self) -> None:
         self._require_available()
-        with self._start_lock:
-            if self._thread is None:
-                self._thread = threading.Thread(target=self._run, daemon=True)
-                self._thread.start()
-        started = self._started.wait(timeout=5)
-        if not started or self._start_error is not None:
+        try:
+            self._bg.ensure_started()
+        except Exception as exc:
             raise TextOutputUnavailableError(
-                f"autourgos-textoutput failed to start its Tk root. Detail: {self._start_error}"
-            )
+                f"autourgos-textoutput failed to start its Tk root. Detail: {exc}"
+            ) from exc
 
-    def _run(self) -> None:
+    def _run(self, handle: LazyBackgroundThread) -> None:
         tkinter = self._tkinter
         try:
             self._root = tkinter.Tk()
             self._root.withdraw()  # the root itself is never shown -- only output windows are
         except Exception as exc:
-            self._start_error = exc
-            self._started.set()
+            handle.mark_failed(exc)
             return
-        self._started.set()
+        handle.mark_ready()
         self._root.after(50, self._poll_queue)
         self._root.mainloop()
 
     def _poll_queue(self) -> None:
-        while True:
-            try:
-                fn = self._queue.get_nowait()
-            except queue.Empty:
-                break
-            try:
-                fn()
-            except Exception:
-                logger.exception("autourgos-textoutput: queued callback raised")
+        self._queue.drain(
+            on_error=lambda exc: logger.exception(
+                "autourgos-textoutput: queued callback raised", exc_info=exc
+            )
+        )
         if self._root is not None:
             self._root.after(50, self._poll_queue)
 
@@ -156,14 +150,14 @@ class OutputBox:
         """
         self._ensure_started()
         resolved_text = extract_text(text)
-        self._queue.put(lambda: self._show_window(resolved_text, title or self.title, markdown))
+        self._queue.post(lambda: self._show_window(resolved_text, title or self.title, markdown))
 
     def close_all(self) -> None:
         """Close every currently-open output window belonging to this box. Safe to call from any thread."""
-        if self._thread is None:
+        if not self._bg.is_started:
             return  # never started -- nothing could possibly be open
         self._ensure_started()
-        self._queue.put(self._close_all_windows)
+        self._queue.post(self._close_all_windows)
 
     # ── popups (always called on this box's own Tk thread) ─────────────────
 

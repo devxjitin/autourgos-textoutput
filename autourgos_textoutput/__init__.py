@@ -35,7 +35,7 @@ from .output import OutputBox, TextOutputError, TextOutputUnavailableError, show
 
 from autourgos_core import package_version
 
-__version__ = package_version("autourgos-textoutput", fallback="0.1.3")
+__version__ = package_version("autourgos-textoutput", fallback="0.1.4")
 
 __all__ = [
     "OutputBox",

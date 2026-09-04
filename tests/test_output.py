@@ -44,11 +44,11 @@ def _wait_for_toplevel(box: OutputBox, expected_count: int = 1, timeout: float =
 
 def test_show_starts_its_own_thread_and_root():
     box = OutputBox(title="Test Output")
-    assert box._thread is None
+    assert not box._bg.is_started
     box.show("hello")
     tops = _wait_for_toplevel(box)
-    assert box._thread is not None
-    assert box._thread.is_alive()
+    assert box._bg.is_started
+    assert box._bg._thread.is_alive()
     assert tops[0].title() == "Test Output"
     box.close_all()
 
@@ -60,10 +60,10 @@ def test_poll_queue_survives_a_raising_callback():
     def boom():
         raise RuntimeError("simulated bad render")
 
-    box._queue.put(boom)
+    box._queue.post(boom)
     box.show("still works after a bad callback")
     _wait_for_toplevel(box)
-    assert box._thread.is_alive()
+    assert box._bg._thread.is_alive()
     box.close_all()
 
 
@@ -139,9 +139,9 @@ def test_markdown_rendering_when_extra_installed():
 
 def test_close_all_on_never_started_box_does_not_start_a_thread():
     box = OutputBox()
-    assert box._thread is None
+    assert not box._bg.is_started
     box.close_all()
-    assert box._thread is None
+    assert not box._bg.is_started
 
 
 def test_window_is_not_permanently_topmost():
